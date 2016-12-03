@@ -1,19 +1,17 @@
 package me.yokeyword.sample.demo_wechat.ui.fragment;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
-
 import me.yokeyword.fragmentation.SupportFragment;
 import me.yokeyword.sample.R;
+import me.yokeyword.sample.demo_wechat.DemoActivity;
 import me.yokeyword.sample.demo_wechat.base.BaseFragment;
-import me.yokeyword.sample.demo_wechat.event.StartBrotherEvent;
-import me.yokeyword.sample.demo_wechat.event.TabSelectedEvent;
 import me.yokeyword.sample.demo_wechat.ui.fragment.first.WechatFirstTabFragment;
 import me.yokeyword.sample.demo_wechat.ui.fragment.second.WechatSecondTabFragment;
 import me.yokeyword.sample.demo_wechat.ui.fragment.third.WechatThirdTabFragment;
@@ -72,7 +70,7 @@ public class MainFragment extends BaseFragment {
     }
 
     private void initView(View view) {
-        EventBus.getDefault().register(this);
+//        EventBus.getDefault().register(this);
         mBottomBar = (BottomBar) view.findViewById(R.id.bottomBar);
 
         mBottomBar
@@ -85,14 +83,20 @@ public class MainFragment extends BaseFragment {
 
         mBottomBar.setOnTabSelectedListener(new BottomBar.OnTabSelectedListener() {
             @Override
-            public void onTabSelected(int position, int prePosition) {
-                showHideFragment(mFragments[position], mFragments[prePosition]);
-
-                BottomBarTab tab = mBottomBar.getItem(FIRST);
-                if (position == FIRST) {
-                    tab.setUnreadCount(0);
+            public synchronized void onTabSelected(int position, int prePosition) {
+                mPrePosition = prePosition;
+                if (position == 1 && !flag) {
+                    flag = true;
+                    mBottomBar.setCurrentItem(prePosition);
+                    gotoDemoAcivity();
                 } else {
-                    tab.setUnreadCount(tab.getUnreadCount() + 1);
+                    showHideFragment(mFragments[position], mFragments[prePosition]);
+                    BottomBarTab tab = mBottomBar.getItem(FIRST);
+                    if (position == FIRST) {
+                        tab.setUnreadCount(0);
+                    } else {
+                        tab.setUnreadCount(tab.getUnreadCount() + 1);
+                    }
                 }
             }
 
@@ -106,30 +110,51 @@ public class MainFragment extends BaseFragment {
                 // 这里推荐使用EventBus来实现 -> 解耦
                 // 在FirstPagerFragment,FirstHomeFragment中接收, 因为是嵌套的Fragment
                 // 主要为了交互: 重选tab 如果列表不在顶部则移动到顶部,如果已经在顶部,则刷新
-                EventBus.getDefault().post(new TabSelectedEvent(position));
+//                EventBus.getDefault().post(new TabSelectedEvent(position));
             }
         });
     }
 
-    @Override
-    protected void onFragmentResult(int requestCode, int resultCode, Bundle data) {
-        super.onFragmentResult(requestCode, resultCode, data);
-        if (requestCode == REQ_MSG && resultCode == RESULT_OK) {
+    private int mPrePosition;
+    private boolean flag ;
 
+
+    private void gotoDemoAcivity() {
+        startActivityForResult(new Intent(getActivity(), DemoActivity.class),0);
+    }
+
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == Activity.RESULT_OK) {
+            switch (requestCode) {
+                case 0:
+                    mBottomBar.setCurrentItem(1);
+//                    showHideFragment(mFragments[1],mFragments[mPrePosition]);
+                    showHideFragment(mFragments[1]);
+                    break;
+            }
         }
     }
 
-    /**
-     * start other BrotherFragment
-     */
-    @Subscribe
-    public void startBrother(StartBrotherEvent event) {
-        start(event.targetFragment);
-    }
+//    @Override
+//    protected void onFragmentResult(int requestCode, int resultCode, Bundle data) {
+//        super.onFragmentResult(requestCode, resultCode, data);
+//
+//    }
 
-    @Override
-    public void onDestroyView() {
-        EventBus.getDefault().unregister(this);
-        super.onDestroyView();
-    }
+//    /**
+//     * start other BrotherFragment
+//     */
+//    @Subscribe
+//    public void startBrother(StartBrotherEvent event) {
+//        start(event.targetFragment);
+//    }
+
+//    @Override
+//    public void onDestroyView() {
+//        EventBus.getDefault().unregister(this);
+//        super.onDestroyView();
+//    }
 }

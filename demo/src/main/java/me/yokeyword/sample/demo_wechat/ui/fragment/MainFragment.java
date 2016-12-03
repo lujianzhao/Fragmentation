@@ -131,7 +131,9 @@ public class MainFragment extends BaseFragment {
             switch (requestCode) {
                 case 0:
                     mBottomBar.setCurrentItem(1);
+                    //这个方法调用没任何问题
 //                    showHideFragment(mFragments[1],mFragments[mPrePosition]);
+                    //下面这个方法会导致当前的Fragment一片空白
                     showHideFragment(mFragments[1]);
                     break;
             }
